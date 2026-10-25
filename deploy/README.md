@@ -51,7 +51,7 @@ sudo BUCKET=bach-mlflow-artifacts-xxx bash /opt/bach/deploy/instalar_ec2.sh
 Después, revisar el nombre del modelo en `/etc/bach/bach.env`:
 
 ```bash
-sudo nano /etc/bach/bach.env      # MODEL_NAME=bach-chorales-equipoXX
+sudo nano /etc/bach/bach.env      # MODEL_NAME=bach-chorales-equipoF
 sudo systemctl restart bach-api
 ```
 

@@ -55,7 +55,7 @@ AWS_DEFAULT_REGION=us-east-1
 EXTRA_ALLOWED_HOSTS=
 # La API carga este modelo desde el servidor MLflow local
 MLFLOW_TRACKING_URI=http://127.0.0.1:5000
-MODEL_NAME=bach-chorales-equipoXX
+MODEL_NAME=bach-chorales-equipoF
 MODEL_ALIAS=champion
 CONFEOF
   echo "Creado $CONF (revisar MODEL_NAME)"

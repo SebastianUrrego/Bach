@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictInt
 load_dotenv()
 log = logging.getLogger("uvicorn.error")
 
-MODEL_NAME = os.getenv("MODEL_NAME", "bach-chorales-equipoXX")
+MODEL_NAME = os.getenv("MODEL_NAME", "bach-chorales-equipoF")
 MODEL_ALIAS = os.getenv("MODEL_ALIAS", "champion")
 
 state: dict = {"model": None, "name": MODEL_NAME, "version": None, "error": None}
