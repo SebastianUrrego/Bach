@@ -1,0 +1,18 @@
+[Unit]
+Description=API FastAPI del laboratorio Bach (carga el modelo champion de MLflow)
+After=bach-mlflow.service
+Wants=bach-mlflow.service
+
+[Service]
+User=bach
+Group=bach
+EnvironmentFile=/etc/bach/bach.env
+WorkingDirectory=/opt/bach
+# Espera a que MLflow responda antes de cargar el modelo
+ExecStartPre=/bin/bash -c 'for i in $$(seq 90); do curl -sf http://127.0.0.1:${MLFLOW_PORT}/health >/dev/null && exit 0; sleep 2; done; exit 1'
+ExecStart=/opt/bach/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port ${API_PORT}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

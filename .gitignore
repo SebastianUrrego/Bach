@@ -1,0 +1,20 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Datos descargados (se obtienen con `python -m bach.data`)
+data/
+
+# MLflow local y checkpoints
+mlruns/
+mlartifacts/
+mlflow.db
+checkpoints/
+*.pt
+
+# Archivos locales que no van al repo
+CLAUDE.md
+*.pdf
+*.egg-info/

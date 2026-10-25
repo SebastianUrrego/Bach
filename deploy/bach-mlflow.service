@@ -1,0 +1,16 @@
+[Unit]
+Description=Servidor MLflow (tracking + model registry) del laboratorio Bach
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=bach
+Group=bach
+EnvironmentFile=/etc/bach/bach.env
+WorkingDirectory=/var/lib/bach
+ExecStart=/bin/bash /opt/bach/deploy/mlflow_server.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
