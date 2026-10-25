@@ -24,6 +24,27 @@ def loss_curve(history: list[dict], best_epoch: int, title: str, path) -> None:
     plt.close(fig)
 
 
+def comparison_curves(histories: dict[str, list[dict]], best_epochs: dict[str, int], path) -> None:
+    """Pérdida de entrenamiento (punteada) y validación (continua) de varios runs; marca la mejor época."""
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for name, history in histories.items():
+        epochs = [h["epoch"] for h in history]
+        (line,) = ax.plot(epochs, [h["val_loss"] for h in history], "o-", ms=3, label=f"{name} valid")
+        ax.plot(epochs, [h["train_loss"] for h in history], ":", color=line.get_color(), label=f"{name} train")
+        best = next(h for h in history if h["epoch"] == best_epochs[name])
+        ax.plot(best["epoch"], best["val_loss"], "*", ms=14, color=line.get_color(), mec="black")
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlabel("Época")
+    ax.set_ylabel("Entropía cruzada")
+    ax.set_ylim(top=1.6)
+    ax.set_title("E1–E4: pérdida por época (★ = mejor checkpoint)")
+    ax.legend(ncol=2, fontsize=8)
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=120)
+    plt.close(fig)
+
+
 def attention_map(weights, title: str, path) -> None:
     """weights (16, 32): fila = paso generado, columna = posición del contexto."""
     fig, ax = plt.subplots(figsize=(9, 4.5))
