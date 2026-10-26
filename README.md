@@ -366,6 +366,18 @@ La API muestrea sin semilla fija, así que cada llamada devuelve una continuaci�
 Las entradas inválidas se rechazan con 422 antes de llegar al modelo. Las válidas devuelven exactamente `steps` filas
 de 4 enteros en el rango 0–127.
 
+### Pruebas automáticas (`test/`)
+
+`pytest` ejecuta **44 pruebas**, y todas pasan:
+
+| Archivo | Qué prueba | Necesita |
+|---------|------------|----------|
+| [`test/test_api.py`](test/test_api.py) (35) | El contrato de la API con un `Seq2Seq` inyectado: `/health` (200, y 503 sin modelo); `steps` de 1, 15, 16, 17, 33, 48 y 64 con salida `steps × 4` en 0–127; temperaturas límite y por defecto; 18 entradas inválidas (filas o notas de más o de menos, nota 128 o −1, decimales, texto, booleanos, `steps` 0 o 65, temperatura fuera de rango, campos faltantes o extra) que devuelven **422 sin llamar al modelo** | Nada: no usa MLflow ni la red |
+| [`test/test_despliegue.py`](test/test_despliegue.py) (9) | La API real en la EC2 con `champion`: `/health`, `steps` 32 y 33, cada voz dentro de su registro (modelo entrenado) y 5 entradas inválidas | La EC2 encendida; si no responde, se omiten |
+
+En las pruebas de entradas inválidas, el modelo inyectado cuenta sus llamadas a `generate`. Así se verifica que la
+validación ocurre **antes** de llamar al modelo.
+
 ## 6. Cómo ejecutar
 
 ```bash
@@ -386,6 +398,7 @@ copy .env.example .env            # y completar MLFLOW_TRACKING_URI
 | Registrar `champion` | `python -m bach.register` |
 | API local | `uvicorn api.main:app --port 8000` |
 | Probar la API | `python api/probar_api.py <URL> data/jsb_chorales/valid/chorale_229.csv` |
+| Pruebas automáticas | `pytest` (otra URL: `BACH_API_URL=http://127.0.0.1:8000 pytest`) |
 
 El despliegue en AWS (EC2 con MLflow y la API como servicios systemd, artefactos en S3) está documentado en
 [`deploy/README.md`](deploy/README.md).
@@ -408,6 +421,7 @@ Bach/
 ├── api/
 │   ├── main.py       # FastAPI: /generate y /health
 │   └── probar_api.py # pruebas de la API
+├── test/             # pytest: contrato de la API y API desplegada
 ├── deploy/           # instalación en EC2 (MLflow + API)
 ├── docs/img/         # figuras del README
 └── outputs/

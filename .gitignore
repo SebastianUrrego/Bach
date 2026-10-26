@@ -18,3 +18,4 @@ checkpoints/
 CLAUDE.md
 *.pdf
 *.egg-info/
+.pytest_cache/

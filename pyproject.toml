@@ -10,3 +10,9 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["."]
+markers = ["despliegue: pruebas contra la API desplegada en la EC2 (se omiten si no responde)"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
