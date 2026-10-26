@@ -1,9 +1,10 @@
-"""Gráficas que se guardan como artefactos: curva de pérdidas y mapa de atención."""
+"""Gráficas que se guardan como artefactos: curvas de pérdida, piano roll y mapa de atención."""
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 
 
@@ -39,6 +40,32 @@ def comparison_curves(histories: dict[str, list[dict]], best_epochs: dict[str, i
     ax.set_ylim(top=1.6)
     ax.set_title("E1–E4: pérdida por época (★ = mejor checkpoint)")
     ax.legend(ncol=2, fontsize=8)
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(path, dpi=120)
+    plt.close(fig)
+
+
+def piano_roll(steps, context_len: int, title: str, path, real=None) -> None:
+    """Notas por voz en el tiempo; la línea vertical separa contexto y continuación.
+    Si se pasa `real`, se dibuja en gris la continuación verdadera del coral."""
+    names = ["Soprano", "Alto", "Tenor", "Bajo"]
+    fig, ax = plt.subplots(figsize=(11, 4.5))
+    t = np.arange(len(steps))
+    if real is not None:
+        tr = np.arange(context_len, context_len + len(real))
+        for v in range(4):
+            y = np.where(real[:, v] > 0, real[:, v], np.nan)
+            ax.step(tr, y, where="post", color="gray", alpha=0.45, lw=3, label="coral real" if v == 0 else None)
+    for v in range(4):
+        y = np.where(steps[:, v] > 0, steps[:, v], np.nan).astype(float)
+        ax.step(t, y, where="post", lw=1.6, label=names[v])
+    ax.axvline(context_len, color="black", ls="--", lw=1)
+    ax.text(context_len + 0.5, ax.get_ylim()[1] - 1, "continuación generada →", va="top", fontsize=9)
+    ax.set_xlabel("Paso (semicorchea)")
+    ax.set_ylabel("Nota MIDI")
+    ax.set_title(title)
+    ax.legend(ncol=5, fontsize=8, loc="lower left")
     ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(path, dpi=120)

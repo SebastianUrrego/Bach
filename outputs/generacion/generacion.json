@@ -1,0 +1,157 @@
+{
+  "modelo": "E4",
+  "run_id": "042df735c704434f8e2cac7e58d922c0",
+  "pasos_nuevos": 64,
+  "temperatura": 1.0,
+  "semilla_muestreo": 42,
+  "tempo_negras_por_min": 80.0,
+  "segundos_por_paso": 0.1875,
+  "rangos_train_por_voz": [
+    [
+      60,
+      81
+    ],
+    [
+      52,
+      74
+    ],
+    [
+      46,
+      69
+    ],
+    [
+      36,
+      66
+    ]
+  ],
+  "fragmentos": [
+    {
+      "coral": "chorale_229",
+      "indice_valid": 0,
+      "pasos_coral": 196,
+      "real": {
+        "repite_paso_anterior": 0.6875,
+        "repite_nota_por_voz": 0.8203125,
+        "notas_distintas_por_voz": [
+          4,
+          6,
+          6,
+          8
+        ],
+        "silencios": 0.0,
+        "notas_tras_fusionar": 47,
+        "notas_fuera_de_rango": 0
+      },
+      "por_temperatura": {
+        "1.0": {
+          "repite_paso_anterior": 0.515625,
+          "repite_nota_por_voz": 0.76953125,
+          "notas_distintas_por_voz": [
+            5,
+            7,
+            6,
+            12
+          ],
+          "silencios": 0.0,
+          "notas_tras_fusionar": 60,
+          "notas_fuera_de_rango": 0,
+          "coincidencia_con_real": 0.1015625
+        },
+        "0.7": {
+          "repite_paso_anterior": 0.6875,
+          "repite_nota_por_voz": 0.84375,
+          "notas_distintas_por_voz": [
+            4,
+            5,
+            5,
+            6
+          ],
+          "silencios": 0.0,
+          "notas_tras_fusionar": 41,
+          "notas_fuera_de_rango": 0,
+          "coincidencia_con_real": 0.09375
+        },
+        "1.3": {
+          "repite_paso_anterior": 0.296875,
+          "repite_nota_por_voz": 0.62109375,
+          "notas_distintas_por_voz": [
+            9,
+            10,
+            12,
+            12
+          ],
+          "silencios": 0.0078125,
+          "notas_tras_fusionar": 97,
+          "notas_fuera_de_rango": 1,
+          "coincidencia_con_real": 0.046875
+        }
+      },
+      "midi": "chorale_229_E4_T1.0_s42.mid",
+      "eventos_midi": 85
+    },
+    {
+      "coral": "chorale_230",
+      "indice_valid": 1,
+      "pasos_coral": 208,
+      "real": {
+        "repite_paso_anterior": 0.546875,
+        "repite_nota_por_voz": 0.74609375,
+        "notas_distintas_por_voz": [
+          6,
+          6,
+          8,
+          7
+        ],
+        "silencios": 0.0,
+        "notas_tras_fusionar": 65,
+        "notas_fuera_de_rango": 0
+      },
+      "por_temperatura": {
+        "1.0": {
+          "repite_paso_anterior": 0.515625,
+          "repite_nota_por_voz": 0.74609375,
+          "notas_distintas_por_voz": [
+            7,
+            7,
+            9,
+            10
+          ],
+          "silencios": 0.0,
+          "notas_tras_fusionar": 67,
+          "notas_fuera_de_rango": 0,
+          "coincidencia_con_real": 0.140625
+        },
+        "0.7": {
+          "repite_paso_anterior": 0.625,
+          "repite_nota_por_voz": 0.8125,
+          "notas_distintas_por_voz": [
+            6,
+            5,
+            9,
+            8
+          ],
+          "silencios": 0.0,
+          "notas_tras_fusionar": 51,
+          "notas_fuera_de_rango": 0,
+          "coincidencia_con_real": 0.109375
+        },
+        "1.3": {
+          "repite_paso_anterior": 0.21875,
+          "repite_nota_por_voz": 0.65234375,
+          "notas_distintas_por_voz": [
+            13,
+            8,
+            9,
+            14
+          ],
+          "silencios": 0.0,
+          "notas_tras_fusionar": 90,
+          "notas_fuera_de_rango": 3,
+          "coincidencia_con_real": 0.140625
+        }
+      },
+      "midi": "chorale_230_E4_T1.0_s42.mid",
+      "eventos_midi": 87
+    }
+  ]
+}

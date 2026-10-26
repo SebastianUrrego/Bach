@@ -10,8 +10,9 @@ publica con una **API FastAPI**.
 | Componente | Enlace / estado |
 |------------|-----------------|
 | MLflow (experimento `nlp-bach-equipoF`) | http://3.229.168.127:5000 — acceso restringido por IP (Security Group) |
-| API FastAPI | http://3.229.168.127:8000/docs — pendiente de registrar `champion` |
+| API FastAPI | http://3.229.168.127:8000/docs — sirve `bach-chorales-equipoF` v1 (`champion`) |
 | Modelo elegido | **E4** · run `042df735c704434f8e2cac7e58d922c0` |
+| Evidencias musicales | [2 MIDI](outputs/generacion/) · [mapa de atención E3](docs/img/attention_E3.png) |
 
 | Fase | Estado |
 |------|--------|
@@ -19,9 +20,9 @@ publica con una **API FastAPI**.
 | 1. Datos y ventanas | ✅ |
 | 2. Modelos E1–E3 | ✅ |
 | 3. E4, selección y test | ✅ |
-| 4. Generación musical (2 MIDI) | ⏳ |
-| 5. Registro `champion` y API | ⏳ código listo, falta registrar |
-| 6. Informe final | ⏳ este README |
+| 4. Generación musical (2 MIDI) | ✅ |
+| 5. Registro `champion` y API | ✅ |
+| 6. Informe final | ✅ este README |
 
 ---
 
@@ -171,7 +172,8 @@ usaron para elegir el modelo.
 ### Mapa de atención de E3
 
 Para el mapa se usó el mejor checkpoint de E3 (época 17), en **generación libre** (sin teacher forcing) de 16 pasos.
-El contexto son los primeros 32 pasos de `chorale_229` (valid), con T = 1.0 y semilla 42.
+El contexto son los primeros 32 pasos de `chorale_229` (valid), con T = 1.0 y semilla 42. Es uno de los dos
+fragmentos de la generación musical (sección 4).
 
 ![Mapa de atención de E3](docs/img/attention_E3.png)
 
@@ -187,16 +189,168 @@ alto no implica que esa posición cause la predicción.
 
 ## 4. Generación musical
 
-⏳ Pendiente: continuación de 2 corales de valid con E4 (≥ 32 pasos nuevos, bloques de 16, T = 1.0), exportada a
-2 archivos MIDI con `pretty_midi`.
+Con el modelo elegido (E4, época 12) se continuaron los **primeros 32 pasos de 2 corales de valid**. La
+generación es libre: el decoder nunca recibe el futuro real. La hace `python -m bach.generate` con esta configuración:
+
+| Parámetro | Valor |
+|-----------|-------|
+| Corales (valid) | `chorale_229` (índice 0) y `chorale_230` (índice 1) |
+| Pasos nuevos por fragmento | 64 = 4 bloques de 16 |
+| Temperatura | **T = 1.0** (referencia); también se exploraron 0.7 y 1.3, sin reentrenar |
+| Semilla aleatoria del muestreo | 42 (`torch.Generator`) |
+| Tempo de los MIDI | **80 negras por minuto**, es decir 60 / (4 · 80) = **0,1875 s por paso** |
+
+**Cómo se genera** ([`Seq2Seq.generate`](src/bach/models.py)):
+1. El encoder lee los últimos 32 pasos disponibles.
+2. El decoder parte del último paso del contexto y genera hasta 16 pasos. En cada paso, para cada voz, calcula
+   `softmax(logits / T)` y muestrea una nota, que se convierte en la entrada del paso siguiente.
+3. Al cerrar el bloque se toman **los últimos 32 pasos** (que ya incluyen lo generado), el encoder los vuelve a
+   leer y el decoder se reinicia con ese estado.
+4. El último bloque se corta cuando se completa la cantidad pedida.
+
+**Evidencias** (también guardadas en el run E4 de MLflow, carpeta `generacion/`):
+
+| Coral | MIDI (contexto + continuación) | Matriz de notas | Notas MIDI |
+|-------|------|------|:---:|
+| `chorale_229` | [chorale_229_E4_T1.0_s42.mid](outputs/generacion/chorale_229_E4_T1.0_s42.mid) | [csv](outputs/generacion/chorale_229_E4_T1.0_s42.csv) | 85 |
+| `chorale_230` | [chorale_230_E4_T1.0_s42.mid](outputs/generacion/chorale_230_E4_T1.0_s42.mid) | [csv](outputs/generacion/chorale_230_E4_T1.0_s42.csv) | 87 |
+
+Cada MIDI tiene 4 pistas (Soprano, Alto, Tenor, Bajo), dura 18 s (96 pasos) y lleva un marcador de texto en los
+6,0 s, donde empieza la continuación. Las notas iguales consecutivas de una voz se fusionan en una sola nota larga
+y el `0` se trata como silencio.
+
+En los gráficos, la línea gris es cómo sigue realmente el coral y la línea punteada marca el inicio de lo generado:
+
+![Piano roll chorale_229](docs/img/pianoroll_chorale_229.png)
+![Piano roll chorale_230](docs/img/pianoroll_chorale_230.png)
+
+### Repeticiones, variedad y silencios
+
+Estadísticas de los 64 pasos generados frente a los 64 pasos reales que siguen en el coral
+(detalle en [`generacion.json`](outputs/generacion/generacion.json)):
+
+| | Pasos que repiten el anterior | Notas distintas (S, A, T, B) | Silencios | Notas tras fusionar | Fuera del rango de train | Coincidencia con el real |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `229` real | 69 % | 4, 6, 6, 8 | 0 % | 47 | 0 | — |
+| `229` T = 0.7 | 69 % | 4, 5, 5, 6 | 0 % | 41 | 0 | 9 % |
+| **`229` T = 1.0** | **52 %** | **5, 7, 6, 12** | **0 %** | **60** | **0** | **10 %** |
+| `229` T = 1.3 | 30 % | 9, 10, 12, 12 | 0,8 % | 97 | 1 | 5 % |
+| `230` real | 55 % | 6, 6, 8, 7 | 0 % | 65 | 0 | — |
+| `230` T = 0.7 | 63 % | 6, 5, 9, 8 | 0 % | 51 | 0 | 11 % |
+| **`230` T = 1.0** | **52 %** | **7, 7, 9, 10** | **0 %** | **67** | **0** | **14 %** |
+| `230` T = 1.3 | 22 % | 13, 8, 9, 14 | 0 % | 90 | 3 | 14 % |
+
+- **Repeticiones:** con T = 1.0 la mitad de los pasos repite el anterior; es decir, el modelo sostiene notas como en
+  los corales reales. En `230` el ritmo de cambios es casi igual al real (52 % frente a 55 %). En `229` cambia
+  más que el original (52 % frente a 69 %). Sin embargo, la soprano de `229` se queda en la misma nota (69) durante
+  los primeros 24 pasos (1,5 compases) y después solo oscila entre 67 y 69 hasta el paso 82, mientras la soprano
+  real sube hasta 77: hay repetición en la melodía y movimiento en las voces graves.
+- **Variedad:** las voces se mantienen en sus registros (ninguna nota fuera del rango de train a T = 1.0). El
+  **bajo es la voz más inestable**: usa 12 y 10 notas distintas (frente a 8 y 7 en los originales) y tiene saltos
+  grandes, como el que baja a 38 en el paso 56 de `229`. La temperatura controla la variedad como se espera: con 0.7
+  hay menos notas y más repetición; con 1.3 casi se duplica el número de notas, aparecen notas fuera de los
+  rangos de train y un silencio.
+- **Silencios:** los fragmentos reales no tienen silencios en esos pasos (en valid son menos del 1 %), y con
+  T ≤ 1.0 el modelo tampoco los genera. Solo con T = 1.3 aparece uno, como nota de baja probabilidad muestreada.
+
+### Desempeño predictivo frente a calidad musical
+
+- **La continuación libre coincide poco con el coral real:** apenas un 10–14 % de las notas, cuando la exactitud
+  por nota con teacher forcing es de 0,82. No es una contradicción. La exactitud con teacher forcing mide un solo paso,
+  dado el pasado **real**. En generación libre cada nota muestreada se convierte en entrada de la siguiente y los
+  desvíos se acumulan: después de unos pasos el modelo sigue *su* continuación y no la de Bach.
+- **Esa baja coincidencia no significa que la música sea mala:** hay muchas continuaciones válidas para un mismo
+  contexto. La pérdida y las exactitudes miden **qué tan bien se predice la nota real**, no si el resultado suena a coral.
+- **La calidad percibida depende de otras cosas:** que las voces se mantengan en su registro, que haya un ritmo
+  armónico razonable y que no aparezcan saltos o disonancias extrañas. Ninguna de las métricas de entrenamiento lo
+  mide. En estos dos fragmentos el registro y el ritmo de cambios se parecen a los de los corales; los puntos débiles
+  visibles son los saltos del bajo y la soprano estancada en `229`.
 
 ## 5. Registro del modelo y API
 
-⏳ Pendiente: registrar E4 con `mlflow.pytorch.log_model` como `bach-chorales-equipoF`, con el alias `champion`.
+### Modelo registrado
 
-El código de la API ya está listo y desplegado en la EC2 ([`api/main.py`](api/main.py)). Al arrancar resuelve
-`champion` y carga esa versión desde MLflow. Expone `POST /generate` (`seed` 32×4, `steps` 1–64, `temperature`
-0.5–1.5) y `GET /health`, y valida las entradas con Pydantic antes de llamar al modelo.
+`python -m bach.register` hace el registro en cuatro pasos:
+1. Restaura los pesos del checkpoint de E4 (época 12), descargado de su run.
+2. Guarda el objeto PyTorch completo, con su método `generate`, mediante `mlflow.pytorch.log_model` **dentro del
+   mismo run de entrenamiento** (`serialization_format="pickle"`). Incluye el módulo `src/bach` en `code_paths` y
+   registra las dependencias.
+3. Lo registra en el Model Registry y le asigna el alias `champion`.
+4. Comprueba la carga en un **proceso aparte**, usando solo MLflow y ningún archivo local.
+
+| Campo | Valor |
+|-------|-------|
+| Nombre | `bach-chorales-equipoF` |
+| Versión | **1** |
+| Alias | **`champion`** |
+| Run de origen | E4 · `042df735c704434f8e2cac7e58d922c0` (experimento `nlp-bach-equipoF`) |
+| Comprobación | otro proceso cargó `models:/bach-chorales-equipoF/1` → `Seq2Seq`, y `generate(steps=33)` devolvió `(1, 33, 4)` |
+
+El modelo registrado es el mismo que se eligió en la sección 3 y el mismo que carga la API.
+
+### API
+
+La API ([`api/main.py`](api/main.py)) corre en la EC2 como servicio systemd: http://3.229.168.127:8000/docs
+
+- **Al arrancar:** resuelve `champion` a una versión concreta con `get_model_version_by_alias`, carga
+  `models:/bach-chorales-equipoF/1` en CPU y pone el modelo en modo evaluación.
+- **Durante las solicitudes:** no vuelve a consultar MLflow. Si cambia el alias, hay que reiniciar el servicio
+  (`sudo systemctl restart bach-api`).
+- **Validación:** Pydantic revisa la entrada **antes** de llamar al modelo. `seed` debe ser exactamente 32 × 4
+  enteros entre 0 y 127; `steps` un entero entre 1 y 64; `temperature` un número entre 0.5 y 1.5 (por defecto 1.0).
+  No se aceptan campos extra.
+- **Inferencia:** se hace con `torch.no_grad()` y reutiliza el mismo `Seq2Seq.generate` de la sección 4.
+
+| Endpoint | Respuesta |
+|----------|-----------|
+| `GET /health` | `{"status": "ok", "model": "bach-chorales-equipoF", "version": "1"}` |
+| `POST /generate` | `generated` (`steps` × 4, **sin** el contexto), `model` y `version` |
+
+**Ejemplo de solicitud**, con los primeros 32 pasos de `chorale_230`:
+
+```python
+import pandas as pd, requests
+
+coro = pd.read_csv("data/jsb_chorales/valid/chorale_230.csv")
+payload = {
+    "seed": coro[["note0", "note1", "note2", "note3"]].iloc[:32].values.tolist(),  # [[67, 64, 60, 60], ...]
+    "steps": 16,
+    "temperature": 1.0,
+}
+r = requests.post("http://3.229.168.127:8000/generate", json=payload)
+```
+
+Respuesta (200):
+
+```json
+{"generated": [[71, 69, 55, 48], [71, 69, 55, 48], [71, 67, 57, 48], [71, 67, 57, 48], [71, 67, 59, 50],
+               [71, 67, 59, 50], [69, 67, 59, 50], [69, 67, 59, 50], [69, 67, 59, 50], [69, 67, 59, 50],
+               [69, 65, 60, 50], [69, 65, 60, 50], [67, 65, 59, 51], [67, 61, 59, 51], [67, 61, 59, 50],
+               [67, 62, 59, 50]],
+ "model": "bach-chorales-equipoF", "version": "1"}
+```
+
+La API muestrea sin semilla fija, así que cada llamada devuelve una continuación distinta.
+
+**Pruebas** contra la API desplegada, con el contexto de `chorale_229`
+(`python api/probar_api.py http://3.229.168.127:8000 data/jsb_chorales/valid/chorale_229.csv`):
+
+| Caso | Código | Resultado |
+|------|:---:|-----------|
+| `GET /health` | 200 | `status ok`, `bach-chorales-equipoF`, versión `1` |
+| Válida: `steps=32`, `temperature=1.0` | 200 | 32 filas × 4, todas entre 0 y 127 ✅ |
+| `steps=33` (no múltiplo de 16 → 3 bloques: 16 + 16 + 1) | 200 | 33 filas × 4, todas entre 0 y 127 ✅ |
+| `steps=1`, `temperature=0.5` | 200 | 1 fila × 4 ✅ |
+| `seed` de 31 filas | 422 | `List should have at least 32 items after validation, not 31` |
+| Una nota = 128 | 422 | `Input should be less than or equal to 127` |
+| `steps=65` | 422 | `Input should be less than or equal to 64` |
+| `steps=0` | 422 | `Input should be greater than or equal to 1` |
+| `temperature=2` | 422 | `Input should be less than or equal to 1.5` |
+| Una nota = 60.5 | 422 | `Input should be a valid integer` |
+| Sin `steps` | 422 | `Field required` |
+
+Las entradas inválidas se rechazan con 422 antes de llegar al modelo. Las válidas devuelven exactamente `steps` filas
+de 4 enteros en el rango 0–127.
 
 ## 6. Cómo ejecutar
 
@@ -214,7 +368,10 @@ copy .env.example .env            # y completar MLFLOW_TRACKING_URI
 | Entrenar | `python -m bach.train E1` (E2, E3; E4: `python -m bach.train E4 --cell gru --no-attention --hidden 256 --change "hidden 128 -> 256 (base E2)"`) |
 | Elegir y evaluar en test | `python -m bach.select` |
 | Figuras del README | `python -m bach.report` |
+| Generación y MIDI | `python -m bach.generate` (`--steps`, `--temperature`, `--seed`, `--tempo`) |
+| Registrar `champion` | `python -m bach.register` |
 | API local | `uvicorn api.main:app --port 8000` |
+| Probar la API | `python api/probar_api.py <URL> data/jsb_chorales/valid/chorale_229.csv` |
 
 El despliegue en AWS (EC2 con MLflow y la API como servicios systemd, artefactos en S3) está documentado en
 [`deploy/README.md`](deploy/README.md).
@@ -229,12 +386,19 @@ Bach/
 │   ├── metrics.py    # pérdida y exactitudes
 │   ├── train.py      # entrenamiento + MLflow
 │   ├── select.py     # selección por val loss + test
-│   ├── plots.py      # curvas y mapa de atención
-│   └── report.py     # figuras del README desde MLflow
-├── api/main.py       # FastAPI
+│   ├── plots.py      # curvas, piano roll y mapa de atención
+│   ├── report.py     # figuras del README desde MLflow
+│   ├── generate.py   # continuación de 2 corales, estadísticas y MIDI
+│   ├── midi.py       # matriz (pasos, 4) → MIDI con pretty_midi
+│   └── register.py   # log_model + Model Registry + alias champion
+├── api/
+│   ├── main.py       # FastAPI: /generate y /health
+│   └── probar_api.py # pruebas de la API
 ├── deploy/           # instalación en EC2 (MLflow + API)
 ├── docs/img/         # figuras del README
-└── outputs/resultados/  # resumen por run, tabla y selección
+└── outputs/
+    ├── resultados/   # resumen por run, tabla, selección y registro
+    └── generacion/   # 2 MIDI, matrices de notas y generacion.json
 ```
 
 ## 8. Uso de IA generativa

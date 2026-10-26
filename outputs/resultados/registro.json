@@ -1,0 +1,8 @@
+{
+  "model_name": "bach-chorales-equipoF",
+  "version": "1",
+  "alias": "champion",
+  "run_name": "E4",
+  "run_id": "042df735c704434f8e2cac7e58d922c0",
+  "model_uri": "models:/m-65f1ed1102e3447381ea33c0df4446fc"
+}
