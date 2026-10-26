@@ -266,6 +266,20 @@ Estadísticas de los 64 pasos generados frente a los 64 pasos reales que siguen 
   mide. En estos dos fragmentos el registro y el ritmo de cambios se parecen a los de los corales; los puntos débiles
   visibles son los saltos del bajo y la soprano estancada en `229`.
 
+**Al escucharlos.** El equipo escuchó los dos MIDI. Ambos **suenan naturales**:
+- El paso del contexto real a la continuación generada (segundo 6) no se nota como una costura.
+- No se perciben cambios bruscos ni acordes fuera de lugar.
+
+Los saltos del bajo y la soprano casi quieta de `229`, que sí aparecen en los datos y en el piano roll, no se
+perciben al oído como errores. En una textura coral la atención se va a la armonía de conjunto, y una soprano que
+sostiene notas largas es habitual en los corales.
+
+Esto confirma la diferencia entre las dos cosas que se evalúan:
+- **Desempeño predictivo:** la continuación coincide con el coral real en solo un 10–14 % de las notas.
+- **Calidad percibida:** aun así, el resultado es una continuación musicalmente plausible.
+
+Es una apreciación subjetiva, de dos fragmentos y una semilla, y no una evaluación sistemática.
+
 ## 5. Registro del modelo y API
 
 ### Modelo registrado
